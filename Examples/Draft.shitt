@@ -1,0 +1,139 @@
+data N : U where  
+| zero : ...  
+| succ : (pre : N) -> ...  
+
+fun add (m n : N) : N where  
+| zero n = n
+| (succ m) n = succ (add m n)
+
+data Vec (A : U) : (_ : N) -> U where 
+| nil : ... zero 
+| cons : {n : N} (_ : A) (_ : Vec A n) -> ... (succ n)
+
+axiom partial fun sorry {A: U} : A
+
+fun append {A : U} {m n : N} (v : Vec A m) (w : Vec A n) : Vec A (add m n)
+| nil w = w 
+| (cons x xs) w = cons x (append xs w)
+
+data Id {A : U} : (x y : A) -> U where 
+| refl : (t : A) -> ... t t 
+
+fun uip {B : U} {x x1 : B} (p q: Id x x1) : Id {Id x x1} p q where 
+| {B} {x} {y} (refl z) (refl w) = refl (refl w)
+
+fun K {A : U} {a : A} (P : Id a a -> U) (p : P (refl _)) (e : Id a a) : P e where 
+| P p (refl _) = p
+
+fun J {A : U} {a : A} (P : (b : A) -> Id a b -> U) (p : P a (refl _)) (b : A) (e : Id a b) : P b e 
+| {Ad} {ad} P p b (refl x) = p 
+
+fun sym {A : U} {x y : A} (p : Id x y) : Id y x where 
+| (refl _) = refl _
+
+fun trans {A : U} {x y z : A} (_ : Id x y) (_ : Id y z) : Id x z where 
+| (refl _) (refl _) = refl _ 
+
+fun cong {A B : U} {x y : A} (f : A -> B) (p : Id x y) : Id (f x) (f y) where 
+| f (refl _) = refl _
+
+fun addAssoc (x y z : N) : Id (add (add x y) z) (add x (add y z)) where 
+| zero y z = refl _
+| (succ x) y z = cong succ (addAssoc x y z) 
+
+fun addIdR (x : N) : Id (add x zero) x where 
+| zero = refl _ 
+| (succ x) = cong succ (addIdR x)
+
+fun addSucc (x y : N) : Id (add (succ x) y) (add x (succ y)) where 
+| zero y = refl _ 
+| (succ x) y = cong succ (addSucc x y)
+
+fun addComm (x y : N) : Id (add x y) (add y x) where 
+| zero y = sym (addIdR _)
+| (succ x) y = trans (cong succ (addComm x y)) (addSucc y x)
+
+data Imf {A B : U} (f : A -> B) : (_ : B) -> U where 
+| imf : (x : A) -> ... (f x) 
+
+fun invf {A B : U} (f : A -> B) (y : B) (_ : Imf f y) : A where 
+| f y (imf x) = x  
+
+data Either (A B : U) : U where 
+| left  : (_ : A) -> ...
+| right : (_ : B) -> ...
+
+data Unit : U where 
+| unit : ...
+
+data Bool : U where 
+| true : ... 
+| false : ...
+
+
+fun invfEither {A B : U} (f : A -> B) (y : B) (_ : Either Unit (Imf f y)) : Either B A where 
+| {A} {B} f y (right (imf x)) = right x -- here y is     inaccessible
+| {A} {B} f y (left unit)     = left y  -- here y is not inaccessible
+
+fun invfEither2 {A : U} (f : A -> N) (y : N) (_ : Either Unit (Imf f y)) : Either Bool A where 
+| f y        (right (imf x)) = right x         -- here y is     inaccessible
+| f zero     (left   unit)   = left false      -- here y is not inaccessible
+| f (succ y) (left   unit)   = left true       -- here y is not inaccessible
+
+def maj (_ _ _ : Bool) : Bool where 
+| true  true  true  = true
+| true  false z     = z 
+| false y     true  = y 
+| x     true  false = x 
+| false false false = false
+
+data Void : U where 
+
+fun nomatchTest (n : N) (_: Id (succ (succ n)) (succ n)) : N where 
+| n k !@ k
+
+
+mutual
+  
+  fun even (_ : N) : Bool
+  fun odd  (_ : N) : Bool
+
+begin
+
+  fun even
+  | zero = true
+  | (succ n) = odd n
+  
+  fun odd 
+  | zero = false
+  | (succ n) = even n
+  
+end
+
+data Int : U where 
+| pos : (_:N) -> ... 
+| negSuc : (_:N) -> ... 
+
+fun sub (_ _ : N)   : Int
+| zero     zero     = pos zero 
+| zero     (succ n) = negSuc n
+| (succ m) zero     = pos (succ m)
+| (succ m) (succ n) = sub m n
+
+fun addInt (_ _ : Int)  : traceContext[Int] 
+| (pos    m) (pos    n) = pos (add m n) 
+| (negSuc m) (pos    n) = sub n (succ m)
+| (pos    m) (negSuc n) = sub m (succ n)
+| (negSuc m) (negSuc n) = negSuc (succ (add m n))
+
+
+fun add2 (_ : N) : N -> N 
+| zero = \x . x 
+| (succ m) = \x . succ (add2 m x)
+
+
+fun three : N |= succ (succ (succ zero))
+fun two   : N |= succ (succ zero)
+
+#eval addInt (pos three) (negSuc two)
+#eval add2 three two
