@@ -41,7 +41,6 @@ library
       ShiTT.Termination.Check
       ShiTT.Termination.Ord
       ShiTT.TermParser
-      ShiTT.Unify
   other-modules:
       Paths_shitt
   autogen-modules:

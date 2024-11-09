@@ -2,6 +2,8 @@
 
 An Observational [ShiTT](https://github.com/KonjacSource/ShiTT)
 
+Forked from ShiTT since [Nov 10, 2024](https://github.com/KonjacSource/ShiTT/commit/df9896b24fba7690cb4a795e60f5139933d839af)
+
 ## New primitives
 
 ```haskell
