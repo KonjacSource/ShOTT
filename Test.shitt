@@ -1,0 +1,16 @@
+data N : U where 
+| Z : ... 
+| S : (_:N) -> ...
+
+data False : U where
+
+data Id {A : U} : (x y : A) -> U where 
+| refl : (t : A) -> ... t t 
+
+-- axiom fun add (m n : N) : N where  
+-- | Z n = n
+-- | (S m) n = S (add m n)
+
+fun test (add : N -> N -> N) (_ : Id (add Z Z) Z) : False where
+| _ k !@ k
+

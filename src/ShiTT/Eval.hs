@@ -12,6 +12,7 @@ import Common
 import Debug.Trace (trace)
 import Data.List (intercalate)
 import Data.Maybe (fromJust)
+import ShiTT.OTT
 
 instance Show Value where
   show = pp True -- . force
@@ -29,10 +30,12 @@ instance Show Value where
         VCon x sp -> pp is_top (VRig x sp)
         VFlex m sp -> pp is_top (VRig ('?':show m) sp)
         VFunc x sp -> pp is_top (VRig x.funName sp)
+        VOTTFunc x sp -> pp is_top (VRig x sp)
         VPatVar x sp -> pp is_top (VRig x sp)
         VPi x Expl t b -> inParen $ "Pi (" ++ x ++ ":" ++ pp True t ++ "). " ++ pp True (b @ x := VVar x)
         VPi x Impl t b -> inParen $ "Pi {" ++ x ++ ":" ++ pp True t ++ "}. " ++ pp True (b @ x := VVar x)
         VU -> "U"
+        VOTTEqTerm s -> "#" ++ s
         where paren x = '(' : x ++ ")"
               inParen x = if is_top then x else paren x
 
@@ -75,8 +78,10 @@ eval ctx@(env -> env) = \case
   Let x _ t u         -> eval (ctx <: x := eval ctx t) u
   ---
   Func name           -> case M.lookup name ctx.decls.allFunDecls of 
-    Nothing -> error "impossible"
     Just f  -> appFun ctx f []
+    Nothing -> case M.lookup name ottPreDefined of 
+      Just f  -> ottFun ctx name []
+      Nothing -> error "impossible: unknow function"
   ---
   U                   -> VU 
   ---
@@ -89,10 +94,12 @@ eval ctx@(env -> env) = \case
       | y /= x -> eval ctx (PatVar y) 
     Just v -> v 
     Nothing 
-      | head x == '*' -> VPatVar x []
+      | head x == '*' -> VPatVar x [] -- This is for dealing generated vars from coverage check
       | otherwise -> trace ("unknow: " ++ x ++ " in env: " ++ show env) $ error "Impossible"
   ---
   Undefiend -> error "Impossible: evalating undefined"
+  ---
+  OTTEqTerm s -> VOTTEqTerm s
   ---
   InsertedMeta m bds  ->
     let avail_vars = M.filterWithKey 
@@ -125,9 +132,11 @@ quote ctx (force ctx -> t) =
     VFlex m sp  -> quoteSp ctx (Meta m) sp 
     VPatVar x sp -> quoteSp ctx (PatVar x) sp
     VFunc x sp  -> quoteSp ctx (Func x.funName) sp 
+    VOTTFunc x sp -> quoteSp ctx (Func x) sp 
     VU          -> U 
     VLam x i b  -> binder (\x' b' -> Lam x' i b') (freshName ctx x) b
     VPi x i t b -> binder (\x' b' -> Pi x' i (quote ctx t) b') (freshName ctx x) b
+    VOTTEqTerm s -> OTTEqTerm s
   where 
     binder :: (Name -> Term -> Term) -> Name -> Closure ->  Term 
     binder con x b = con x (quote (ctx <: x := VVar x) (b @ x := VVar x)) 
@@ -169,6 +178,7 @@ vApp ctx t u i = case t of
   VRig  x sp -> VRig  x (sp >>> (u, i))
   VPatVar x sp -> VPatVar x (sp >>> (u, i))
   VFunc x sp -> appFun ctx x (sp >>> (u, i))
+  VOTTFunc x sp -> ottFun ctx x (sp >>> (u, i))
   VCon x sp -> VCon x (sp >>> (u, i))
   _ -> error $ show (t, u, i) ++ "Impossible"
 
@@ -220,7 +230,7 @@ appFun ctx fun (splitAt (arity fun) -> (args, rest_args))
               Just res -> res
           ) 
           rest_args
-  | otherwise                = VFunc fun args
+  | otherwise = VFunc fun args
 
 force :: Context -> Value -> Value
 force ctx t@(VFlex m sp) = 
@@ -248,3 +258,85 @@ getFunType :: Context -> Fun -> VType
 getFunType ctx fun = eval ctx $ go fun.funPara where 
   go [] = fun.funRetType
   go ((x,i,t):ts) = Pi x i t $ go ts
+
+
+-- OTT
+
+ottFun :: Context -> Name -> Spine -> Value 
+ottFun ctx f_name sp 
+  | f_name == coeName && length sp == 4 = 
+      let [s, t, q, v] = map fst sp in 
+        coerce ctx v (s, t) q
+  | otherwise = VOTTFunc f_name sp 
+
+a $#$ b = App a b Expl
+
+coeApp :: String -> Term -> Term -> Term -> Term 
+coeApp eq s t v = Func coeName $#$ s $#$ t $#$ OTTEqTerm eq $#$ v
+
+judgeEqSp :: Context -> Spine -> Spine -> Bool
+judgeEqSp ctx sp sp' = case (sp, sp') of 
+  ([],       []        ) -> True
+  ((v,_):sp, (v',_):sp') -> judgeEq ctx v v' && judgeEqSp ctx sp sp'
+  _                      -> False
+
+judgeEq :: Context -> Value -> Value -> Bool
+judgeEq ctx (refresh ctx -> t) (refresh ctx -> u) = 
+  case (t, u) of 
+  ---
+  (VU, VU) -> True
+  ---
+  (VLam x i t, VLam y i' t') | i == i' -> let x' = freshName ctx x in 
+    judgeEq (ctx <: freeVar x') (t @ x := VVar x') (t' @ y := (VVar x'))
+  ---
+  (t', VLam x i  t ) -> let x' = freshName ctx x in 
+    judgeEq (ctx <: freeVar x') (vApp ctx t' (VVar x') i) (t @ x := VVar x')
+  ---
+  (VLam x i t, t') -> let x' = freshName ctx x in 
+    judgeEq (ctx <: freeVar x') (t @ x := VVar x') (vApp ctx t' (VVar x') i)
+  ---
+  (VPi x i a b, VPi x' i' a' b') | i == i' -> do 
+    let fre = freshName ctx x in
+      judgeEq ctx a a' 
+      && judgeEq (ctx <: freeVar fre) (b @ x := VVar fre) (b' @ x' := VVar fre)
+  ---
+  (VCon con sp, VCon con' sp') | con == con' -> judgeEqSp ctx sp sp' 
+  ---
+  (VFunc fun sp, VFunc fun' sp') | fun.funName == fun'.funName -> judgeEqSp ctx sp sp' 
+  ---
+  (VOTTFunc fun sp, VOTTFunc fun' sp') | fun == fun' -> judgeEqSp ctx sp sp' 
+  --- 
+  (VOTTEqTerm _, VOTTEqTerm _) -> True
+  ---
+  (VRig x sp, VRig x' sp') | x == x' -> judgeEqSp ctx sp sp' 
+  --- 
+  (VPatVar x sp, VRig x' sp') | x == x' -> judgeEqSp ctx sp sp'
+  ---
+  (VRig x sp, VPatVar x' sp') | x == x' -> judgeEqSp ctx sp sp'
+  ---
+  (VPatVar x sp, VPatVar x' sp') | x == x' -> judgeEqSp ctx sp sp'
+  --- 
+  _ -> False
+  
+
+-- Note, coe : (S T : U) (Q : eq U U S T) -> S -> T
+coerce :: Context -> Value -> (VType, VType) -> Value -> Value
+coerce ctx (force ctx -> v) (force ctx -> s, force ctx -> t) eq = case (s,t) of 
+  (VPi x i a b, VPi x' i' a' b') | i == i' -> 
+    let newX = freshName ctx x  -- `newX : a'
+        -- COE a' a #(sym (proj1 eq)) newX : a
+        coeX =  coerce (ctx <: (newX, a) :=! VVar newX ) (VVar newX) (a', a) 
+                (VOTTEqTerm $ symName ++ " (" ++ piEqProj1Name ++ " (" ++ show eq ++ "))")
+        b'nX = b @ (x' := VVar newX)
+        bCoeX = b @ (x' := coeX)
+        -- \ newX -> COE bCoeX b'nX # (v (COE a' a # x))
+        term = Lam newX i 
+             $ coeApp "todo" 
+                (quote ctx bCoeX) 
+                (quote ctx b'nX) 
+                (App (quote ctx v) 
+                     (quote ctx coeX)
+                     Expl)
+    in  eval ctx term
+  _ | judgeEq ctx s t -> v
+  _ -> VOTTFunc "coe" [(s,Expl), (t, Expl), (eq, Expl), (v, Expl)] 

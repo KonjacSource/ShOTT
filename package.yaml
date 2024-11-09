@@ -58,7 +58,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - shitt
+    - shott
 
 tests:
   shitt-test:
@@ -69,7 +69,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - shitt
+    - shott
 
 default-extensions:
 - DerivingVia

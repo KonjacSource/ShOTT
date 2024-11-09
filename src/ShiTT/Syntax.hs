@@ -10,6 +10,7 @@ type MetaId = Int
 
 type Name = String
 
+
 data BindKind = Named Name | Unnamed Icit
   deriving (Show, Eq)
 
@@ -22,7 +23,7 @@ data Raw
   = RRef Name
   | RPVar Name
   | RLam Name BindKind Raw -- \x. t | \{x}. t | \{x = y}. t
-  | RApp Raw Raw BindKind   -- t u  | t {u} | t {x = u}
+  | RApp Raw Raw BindKind  -- t u  | t {u} | t {x = u}
   | RPi Name Icit Raw Raw
   | RLet Name Raw Raw Raw
   | RPrintCtx Raw
@@ -53,6 +54,7 @@ data Term
   | PatVar Name
   | InsertedMeta MetaId BDs
   | Undefiend
+  | OTTEqTerm String 
   | U
   deriving (Show, Eq)
 

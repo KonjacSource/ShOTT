@@ -1,0 +1,7 @@
+axiom partial fun sorry {A: U} : A
+
+fun f1 : (A : U) (x : A) -> U 
+| = \A1 x1 . traceContext[sorry]
+
+fun f : (A C : U) (B : A -> U) (x : A) (y : B x) (x : C) (B : C -> U) (y1 : B x) -> B x
+| = \A C B x y. \x2 B2 y1 . traceContext[y]

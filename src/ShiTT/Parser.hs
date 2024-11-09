@@ -687,7 +687,11 @@ pTopLevel = choice [data_type, checkFunction, pMutual, command] where
         putLn $ "Loading: " ++ fp
         _ <- runWithCtx fp 
         pure ()
-
+      "inferTerm" -> do 
+        term <- pTerm 
+        (_, t) <- inferType term 
+        ctx <- getCtx
+        printLn (quote ctx t) 
       _ -> fail $ "Unknown command " ++ cmd
     
 
@@ -764,6 +768,9 @@ fromFile p fp = do
     Left err -> error $ errorBundlePretty err
     Right a -> pure a
 
+run :: String -> IO () 
+run fp = reset >> fromFile pProg fp >> pure ()
+
 -- fromFileTest :: Parser a -> String -> IO a
 -- fromFileTest p fp = do
 --   src <- readFile fp 
@@ -774,16 +781,13 @@ fromFile p fp = do
 --     Left err -> error $ errorBundlePretty err
 --     Right a -> pure a
 
-run :: String -> IO () 
-run fp = reset >> fromFile pProg fp >> pure ()
+-- runTest :: String -> IO ()
+-- runTest fp = reset >> fromFileTest pProg fp >> pure ()
 
 runWithCtx :: String -> Parser Context
 runWithCtx fp = do 
   cfg <- ask 
   liftIO $ fromFileWith pProg cfg fp  
-
--- runTest :: String -> IO ()
--- runTest fp = reset >> fromFileTest pProg fp >> pure ()
 
 readLine :: IO (Maybe String)
 readLine = do

@@ -12,6 +12,7 @@ import qualified Data.IntMap as I
 import qualified Data.Map as M 
 import Text.Megaparsec (sourcePosPretty)
 import Debug.Trace (trace)
+import ShiTT.OTT
 
 freshMeta :: Context -> IO Term 
 freshMeta ctx = do
@@ -95,6 +96,10 @@ unify ctx (refresh ctx -> t) (refresh ctx -> u) = -- trace ("UNIFYING: " ++ show
   (VCon con sp, VCon con' sp') | con == con' -> unifySp ctx sp sp' 
   ---
   (VFunc fun sp, VFunc fun' sp') | fun.funName == fun'.funName -> unifySp ctx sp sp' 
+  ---
+  (VOTTFunc fun sp, VOTTFunc fun' sp') | fun == fun' -> unifySp ctx sp sp' 
+  --- 
+  (VOTTEqTerm _, VOTTEqTerm _) -> pure ()
   ---
   (VRig x sp, VRig x' sp') | x == x' -> unifySp ctx sp sp' 
   --- 
@@ -186,11 +191,11 @@ check ctx t v = {- trace ("checking: " ++ show t ++ " under " ++ show (refresh c
       (\case (Just name) -> i' == Impl && name == x'
              Nothing     -> i' == Impl)
       (i' == Expl)  
-    -> Lam x i' <$> check (ctx <: x :! (a, Source)) t (b @ x := VVar x)
+    -> Lam x i' <$> check (ctx <: x :! (a, Source)) t (b @ x' := VVar x)
   ---
   (t, VPi x Impl a b) -> do 
     let x' = freshName ctx x 
-    Lam x' Impl <$> check (ctx <: x :! (a, Inserted)) t (b @ x := VVar x)
+    Lam x' Impl <$> check (ctx <: x' :! (a, Inserted)) t (b @ x := VVar x')
   ---
   (RLet x a t u, u') -> do 
     a <- check ctx a VU 
@@ -220,16 +225,19 @@ infer ctx = \case
     (t', ty) <- infer ctx t 
     pure $ (PrintCtx t', ty)
   ---
-  RRef ref ->  
-    case M.lookup ref ctx.decls.allDataDecls of 
-      Just dat -> pure (Func ref, getDataType ctx dat) 
-
-      _ -> case M.lookup ref ctx.decls.allFunDecls of 
-        Just fun -> pure (Func ref, getFunType ctx fun)
+  RRef ref -> 
+    case M.lookup ref ctx.types of 
+      Just t -> pure (Var ref, fst t)
       
-        Nothing -> case M.lookup ref ctx.types of 
-          Just t -> pure (Var ref, fst t)
-          Nothing -> throwIO . Error ctx $ NameNotInScope ref
+      Nothing -> case M.lookup ref ctx.decls.allDataDecls of 
+        Just dat -> pure (Func ref, getDataType ctx dat) 
+
+        Nothing -> case M.lookup ref ctx.decls.allFunDecls of 
+          Just fun -> pure (Func ref, getFunType ctx fun)
+
+          Nothing -> case M.lookup ref ottPreDefined of 
+            Just t -> pure $ (Func ref, eval ctx t)
+            Nothing -> throwIO . Error ctx $ NameNotInScope ref
   ---
   RPVar ref -> case M.lookup ref ctx.types of 
     Just t -> pure (PatVar ref, fst t)

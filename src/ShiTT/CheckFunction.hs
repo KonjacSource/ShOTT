@@ -283,6 +283,8 @@ unify1 ctx fore v w = case (refresh ctx v, refresh ctx w) of
   (VCon con sp, VCon con' sp')   | con == con' -> unifySp ctx fore sp sp'
   (VRig n sp, VRig m sp')        | n == m      -> unifySp ctx fore sp sp'
   (VFunc fun sp, VFunc fun' sp') | fun.funName == fun'.funName -> unifySp ctx fore sp sp'
+  (VOTTFunc fun sp, VOTTFunc fun' sp') | fun == fun' -> unifySp ctx fore sp sp'
+  (VOTTEqTerm _, VOTTEqTerm _) -> pure fore
   (VFlex m sp, VFlex m' sp')     | m == m'     -> unifySp ctx fore sp sp'
   (VPatVar n sp, VPatVar m sp')  | n == m      -> unifySp ctx fore sp sp'
 

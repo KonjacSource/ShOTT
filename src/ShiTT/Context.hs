@@ -15,7 +15,7 @@ type Spine = [(Value, Icit)]
 type Telescope = [(Name, Icit, Term)]
 
 -- for evaluation 
--- NOTE: this may cause some issue, 
+-- NOTE: this may cause some issues, 
 -- since the Map dosn't store the message of dependency of vars.
 -- And we will apply a meta to the context vars.
 -- The generated lambda term may not be well-typed, 
@@ -37,6 +37,8 @@ data Value
   | VPatVar Name Spine
   | VFunc Fun Spine
   | VPi Name Icit VType Closure
+  | VOTTFunc Name Spine
+  | VOTTEqTerm String
   | VU
   -- deriving Show
 
@@ -78,8 +80,10 @@ freeVarOf = \case
   VFlex _ sp -> freeVarOfSp sp 
   VPatVar x sp -> x : freeVarOfSp sp 
   VFunc _ sp -> freeVarOfSp sp 
+  VOTTFunc _ sp -> freeVarOfSp sp
   VLam x _ (Closure _ term) -> filter (/= x) $ freeVarOfTm term 
   VPi x _ a (Closure _ term) -> nub $ freeVarOf a ++ filter (/= x) (freeVarOfTm term)
+  VOTTEqTerm _ -> []
   VU -> []
 
 freeVarOfSp :: Spine -> [Name] 

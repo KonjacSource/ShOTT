@@ -1,0 +1,47 @@
+axiom partial def sym : {S T : U} {x : S} {y : T} -> eq S T x y -> eq T S y x
+axiom partial def refl : {S : U} (x : S) -> eq S S x x
+axiom partial def trans : {X Y Z : U} {x : X} {y : Y} {z : Z} -> eq X Y x y -> eq Y Z y z -> eq X Z x z
+axiom partial def piEqProj1 : {S1 S2 : U} {T1 : S1 -> U} {T2 : S2 -> U} 
+                             -> eq U U ((x : S1) -> T1 x) ((x : S2) -> T2 x) 
+                             -> eq U U       S1                 S2
+axiom partial def piEqProj2 : {S1 S2 : U} {T1 : S1 -> U} {T2 : S2 -> U}
+                             -> eq U U ((x : S1) -> T1 x) ((x : S2) -> T2 x) 
+                             -> {s1 : S1} {s2 : S2}
+                             -> (q : eq S1 S2 s1 s2) 
+                             -> eq U U (T1 s1) (T2 s2)
+
+fun Id {S T : U} (s : S) (t : T) : U 
+| s t = eq _ _ s t
+
+axiom partial def cong  : {S0 S1 : U} {T0 : S0 -> U} {T1 : S1 -> U}
+                          {f0 : (x : S0) -> T0 x} {f1 : (x : S1) -> T1 x}
+                          {s0 : S0} {s1 : S1}
+                          (f01 : Id f0 f1) (s01 : Id s0 s1)
+                       -> Id (f0 s0) (f1 s1)  
+
+fun congr {A B : U} (f : A -> B) {x y : A} (_ : Id x y) : Id (f x) (f y)
+| f q = cong (refl f) q
+
+fun dcongr {A : U} {B : A -> U} (f : (x : A) -> B x) {x y : A} (_ : Id x y) : Id (f x) (f y)
+| f q = cong (refl f) q
+
+axiom partial def absEq 
+  : {S0 S1 T0 T1 : U} {t0 : S0 -> T0} {t1 : S1 -> T1}
+    (S01 : Id S0 S1)
+    (t01 : (x0 : S0) (x1 : S1) (x01 : Id x0 x1) -> Id (t0 x0) (t1 x1))
+ -> Id t0 t1
+
+axiom partial def sorry {A : U} : A
+
+axiom partial def uip : {S0 S1 : U} {s0 : S0} {s1 : S1} 
+                        {T0 T1 : U} {t0 : T0} {t1 : T1}
+                        (_ : Id s0 t0) (_ : Id s1 t1)
+                        (p : Id s0 s1) (q : Id t0 t1)
+                     -> Id p q
+
+fun J {A : U} {a : A} (P : (c : A) -> Id a c -> U) (p : P a (refl _)) (b : A) (e : Id a b) : P b e 
+| {A} {a} P p b e =  
+    coe (P a (refl a)) (P b e) (cong (dcongr P e) (uip (refl _) e (refl a) e)) p
+
+-- fun funext {A B : U} (f : A -> B) (g : A -> B) (_ : (x : A) -> Id (f x) (g x)) -> Id f g 
+-- | f g p = absEq (refl _) (\ x0 x1 x01 -> p x0) -- TODO : J
