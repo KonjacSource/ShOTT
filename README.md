@@ -21,6 +21,7 @@ For example.
 fun appendAssoc {A : U} {l m n : N} 
                 (u : Vec A l) (v : Vec A m) (w : Vec A n) 
               : Id (append (append u v) w) (append u (append v w))
+-- More in OTTExample.shitt
 ```
 
 This is ill-typed in MLTT. But it is fine now thanks to heterogeneous equality.
