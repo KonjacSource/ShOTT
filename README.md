@@ -12,10 +12,32 @@ coe   : (S T : U) (Q : eq U U S T) -> S -> T
 coeP  : (S T : U) (Q : eq U U S T) (s : S) -> eq S T s (coe S T Q s)
 ```
 
-## TODO 
+## TODO
 
 Syntax sugar for OTT.
 
 ## Note
 
 Keep tracing every equality terms is too complex, so I give up on that.
+
+## Reference
+
+Pattern matching and inductive type:
+
+- Ulf Norell. [Towards a practical programming language based on dependent type theory](https://www.cse.chalmers.se/~ulfn/papers/thesis.pdf).
+
+Solving meta variables:
+
+- András Kovács. [elaboration-zoo](https://github.com/AndrasKovacs/elaboration-zoo).
+
+Termination checking:
+
+- Karl Mehltretter. [Termination Checking for a Dependently Typed Language](https://www.cse.chalmers.se/~abela/mehltret-da.pdf).
+
+Observational Type Theory:
+
+- Thorsten Altenkirch, Conor McBride. [Towards observational type theory, draft (2006)](http://strictlypositive.org/ott.pdf).
+
+- Thorsten Altenkirch, Conor McBride, Wouter Swierstra. Observational Equality, Now!, PLPV ‘07: Proceedings of the 2007 workshop on Programming languages meets program verification (2007) 57-68 [ISBN:978-1-59593-677-6, [doi:10.1145/1292597.1292608](http://doi.org/10.1145/1292597.1292608), [pdf](https://www.cs.nott.ac.uk/~psztxa/publ/obseqnow.pdf)]
+
+- [Guest0x0](https://github.com/Guest0x0), [trebor](https://github.com/Guest0x0/trebor)
