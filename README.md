@@ -10,7 +10,20 @@ Forked from ShiTT since [Nov 10, 2024](https://github.com/KonjacSource/ShiTT/com
 eq    : (S T : U) (x : S) (y : T) -> U
 coe   : (S T : U) (Q : eq U U S T) -> S -> T 
 coeP  : (S T : U) (Q : eq U U S T) (s : S) -> eq S T s (coe S T Q s)
+-- More in OTT.shitt
 ```
+
+Now we can prove something we can not in MLTT.
+
+For example.
+
+```haskell
+fun appendAssoc {A : U} {l m n : N} 
+                (u : Vec A l) (v : Vec A m) (w : Vec A n) 
+              : Id (append (append u v) w) (append u (append v w))
+```
+
+This is ill-typed in MLTT. But it is fine now thanks to heterogeneous equality.
 
 ## TODO
 
