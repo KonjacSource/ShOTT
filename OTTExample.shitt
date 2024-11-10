@@ -1,0 +1,45 @@
+#load "OTT.shitt"
+
+axiom partial def sorry {A : U} : A
+
+
+data N : U where 
+| Z : ... 
+| S : (pre : N) -> ...
+
+fun add (m n : N) : N where  
+| Z n = n
+| (S m) n = S (add m n)
+
+data Vec (A : U) : (_ : N) -> U where 
+| nil : ... Z 
+| cons : {n : N} (x : A) (xs : Vec A n) -> ... (S n)
+
+fun append {A : U} {m n : N} (v : Vec A m) (w : Vec A n) : Vec A (add m n) 
+| nil w = w
+| (cons x xs) w = cons x (append xs w)
+
+fun addAssoc (x y z : N) : Id (add (add x y) z) (add x (add y z)) where 
+| Z y z = refl _
+| (S x) y z = congr S (addAssoc x y z) 
+
+fun appendAssoc {A : U} {l m n : N} 
+                (u : Vec A l) (v : Vec A m) (w : Vec A n) 
+              : Id (append (append u v) w) (append u (append v w))
+| {A} {Z}   {m} {n} nil         v w = refl _
+| {A} {S L} {m} {n} (cons x xs) v w = 
+    let helper : Id (cons {A} {add (add L m) n} x) 
+                    (cons {A} {add L (add m n)} x) 
+               = J (\c _ . Id (cons {A} {add (add L m) n} x) (cons {A} {c} x)) 
+                   (refl _) 
+                   (add L (add m n)) 
+                   (addAssoc _ _ _)
+    ;
+    hcong 
+      {Vec A (add (add L m) n) } {Vec A (add L (add m n))}
+      {\_ . Vec A (S (add (add L m) n))} {\_ . Vec A (S (add L (add m n)))}
+      {cons x} {cons x} 
+      {append (append xs v) w} {append xs (append v w)} 
+      helper (appendAssoc xs v w)
+
+

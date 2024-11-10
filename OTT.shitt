@@ -13,25 +13,24 @@ axiom partial def piEqProj2 : {S1 S2 : U} {T1 : S1 -> U} {T2 : S2 -> U}
 fun Id {S T : U} (s : S) (t : T) : U 
 | s t = eq _ _ s t
 
-axiom partial def cong  : {S0 S1 : U} {T0 : S0 -> U} {T1 : S1 -> U}
+axiom partial def hcong : {S0 S1 : U} {T0 : S0 -> U} {T1 : S1 -> U}
                           {f0 : (x : S0) -> T0 x} {f1 : (x : S1) -> T1 x}
                           {s0 : S0} {s1 : S1}
                           (f01 : Id f0 f1) (s01 : Id s0 s1)
                        -> Id (f0 s0) (f1 s1)  
 
 fun congr {A B : U} (f : A -> B) {x y : A} (_ : Id x y) : Id (f x) (f y)
-| f q = cong (refl f) q
+| f q = hcong (refl f) q
 
 fun dcongr {A : U} {B : A -> U} (f : (x : A) -> B x) {x y : A} (_ : Id x y) : Id (f x) (f y)
-| f q = cong (refl f) q
+| f q = hcong (refl f) q
 
 axiom partial def absEq 
-  : {S0 S1 T0 T1 : U} {t0 : S0 -> T0} {t1 : S1 -> T1}
+  : {S0 S1 : U} {T0 : S0 -> U} {T1 : S1 -> U} 
+    {t0 : (x : S0) -> T0 x} {t1 : (x : S1) -> T1 x}
     (S01 : Id S0 S1)
     (t01 : (x0 : S0) (x1 : S1) (x01 : Id x0 x1) -> Id (t0 x0) (t1 x1))
  -> Id t0 t1
-
-axiom partial def sorry {A : U} : A
 
 axiom partial def uip : {S0 S1 : U} {s0 : S0} {s1 : S1} 
                         {T0 T1 : U} {t0 : T0} {t1 : T1}
@@ -41,7 +40,7 @@ axiom partial def uip : {S0 S1 : U} {s0 : S0} {s1 : S1}
 
 fun J {A : U} {a : A} (P : (c : A) -> Id a c -> U) (p : P a (refl _)) (b : A) (e : Id a b) : P b e 
 | {A} {a} P p b e =  
-    coe (P a (refl a)) (P b e) (cong (dcongr P e) (uip (refl _) e (refl a) e)) p
+    coe (P a (refl a)) (P b e) (hcong (dcongr P e) (uip (refl _) e (refl a) e)) p
 
--- fun funext {A B : U} (f : A -> B) (g : A -> B) (_ : (x : A) -> Id (f x) (g x)) -> Id f g 
--- | f g p = absEq (refl _) (\ x0 x1 x01 -> p x0) -- TODO : J
+fun funext {A B : U} (f : A -> B) (g : A -> B) (_ : (x : A) -> Id (f x) (g x)) : Id f g 
+| {A} {B} f g p = absEq {t0 = f} {t1 = g} (refl _) (\ x0 x1 x01 . J (\X1 _. Id (f x0) (g X1)) (p x0) x1 x01)

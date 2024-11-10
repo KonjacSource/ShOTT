@@ -95,7 +95,7 @@ eval ctx@(env -> env) = \case
     Just v -> v 
     Nothing 
       | head x == '*' -> VPatVar x [] -- This is for dealing generated vars from coverage check
-      | otherwise -> trace ("unknow: " ++ x ++ " in env: " ++ show env) $ error "Impossible"
+      | otherwise -> VPatVar x [] -- trace ("unknow: " ++ x ++ " in env: " ++ show env) $ error "Impossible"
   ---
   Undefiend -> error "Impossible: evalating undefined"
   ---

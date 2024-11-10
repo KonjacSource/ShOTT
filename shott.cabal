@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 
-name:           shitt
+name:           shott
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/shitt#readme>
 homepage:       https://github.com/githubuser/shitt#readme
@@ -42,9 +42,9 @@ library
       ShiTT.Termination.Ord
       ShiTT.TermParser
   other-modules:
-      Paths_shitt
+      Paths_shott
   autogen-modules:
-      Paths_shitt
+      Paths_shott
   hs-source-dirs:
       src
   default-extensions:
@@ -80,12 +80,12 @@ library
     , vector
   default-language: Haskell2010
 
-executable shitt-exe
+executable shott-exe
   main-is: Main.hs
   other-modules:
-      Paths_shitt
+      Paths_shott
   autogen-modules:
-      Paths_shitt
+      Paths_shott
   hs-source-dirs:
       app
   default-extensions:
@@ -122,13 +122,13 @@ executable shitt-exe
     , vector
   default-language: Haskell2010
 
-test-suite shitt-test
+test-suite shott-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_shitt
+      Paths_shott
   autogen-modules:
-      Paths_shitt
+      Paths_shott
   hs-source-dirs:
       test
   default-extensions:

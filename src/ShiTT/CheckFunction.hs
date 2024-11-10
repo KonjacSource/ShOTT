@@ -14,6 +14,7 @@ import Data.Maybe (fromJust, isNothing)
 import ShiTT.Meta
 import Data.IORef (readIORef)
 import Data.List (nub)
+import Debug.Trace (trace)
 
 
 data PMErr
@@ -95,6 +96,7 @@ checkP ctx ((x',i', t'):ts) (p:ps) rhsT pvars
               con_res     <-  checkCon ctx (dat, dat_args) (con, con_args, i) pvars
               let con_val  =  head con_res.asValue
               let ctx'     =  ctx <: x' := fst con_val
+              -- HERE MAY BUG
               rest        <-  checkP ctx' ts ps rhsT con_res.unifyRes
               pure CheckPResult
                 { rhsType  = rest.rhsType

@@ -131,6 +131,7 @@ wildcard = do
   liftIO $ writeIORef wildcardRef (cnt_val + 1)
   pure $ "_!" ++ show cnt_val
 
+eqSymbol = symbol "="
 
 parens p   = symbol "(" *> p <* symbol ")"
 braces p   = symbol "{" *> p <* symbol "}"
