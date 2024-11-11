@@ -36,10 +36,7 @@ fun appendAssoc {A : U} {l m n : N}
                    (addAssoc _ _ _)
     ;
     hcong 
-      {Vec A (add (add L m) n) } {Vec A (add L (add m n))}
-      {\_ . Vec A (S (add (add L m) n))} {\_ . Vec A (S (add L (add m n)))}
-      {cons x} {cons x} 
-      {append (append xs v) w} {append xs (append v w)} 
+      {T0 = \_ . Vec A (S (add (add L m) n))} {T1 = \_ . Vec A (S (add L (add m n)))}
       helper (appendAssoc xs v w)
 
 
