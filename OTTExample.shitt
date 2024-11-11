@@ -28,15 +28,14 @@ fun appendAssoc {A : U} {l m n : N}
               : Id (append (append u v) w) (append u (append v w))
 | {A} {Z}   {m} {n} nil         v w = refl _
 | {A} {S L} {m} {n} (cons x xs) v w = 
-    let helper : Id (cons {A} {add (add L m) n} x) 
-                    (cons {A} {add L (add m n)} x) 
-               = J (\c _ . Id (cons {A} {add (add L m) n} x) (cons {A} {c} x)) 
+    let helper : Id (cons {_} {add (add L m) n} x) 
+                    (cons {_} {add L (add m n)} x) 
+               = J (\c _ . Id (cons {_} {add (add L m) n} x) (cons {_} {c} x)) 
                    (refl _) 
                    (add L (add m n)) 
-                   (addAssoc _ _ _)
-    ;
-    hcong 
-      {T0 = \_ . Vec A (S (add (add L m) n))} {T1 = \_ . Vec A (S (add L (add m n)))}
-      helper (appendAssoc xs v w)
+                   (addAssoc _ _ _) ;
+    hcong {T0 = \_ . Vec A (S (add (add L m) n))} {T1 = \_ . Vec A (S (add L (add m n)))}
+      helper 
+      (appendAssoc xs v w)
 
 
